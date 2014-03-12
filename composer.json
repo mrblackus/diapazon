@@ -1,12 +1,15 @@
 {
     "name": "mrblackus/diapazon",
     "description": "Diapazon framework",
-    "minimum-stability": "dev",
+    "minimum-stability": "stable",
     "license": "proprietary",
     "authors": [
         {
             "name": "Mathieu Savy",
             "email": "mathieu.savy@gmail.com"
         }
-    ]
+    ],
+    "require": {
+        "monolog/monolog": "1.7.0"
+    }
 }
