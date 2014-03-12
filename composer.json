@@ -1,0 +1,12 @@
+{
+    "name": "mrblackus/diapazon",
+    "description": "Diapazon framework",
+    "minimum-stability": "dev",
+    "license": "proprietary",
+    "authors": [
+        {
+            "name": "Mathieu Savy",
+            "email": "mathieu.savy@gmail.com"
+        }
+    ]
+}
