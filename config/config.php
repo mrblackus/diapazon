@@ -8,6 +8,7 @@
 
 define('DIAPAZON_ENV', \Diapazon\Diapazon::ENV_DEV);
 define('DIAPAZON_LOG_LEVEL', \Monolog\Logger::DEBUG);
+define('DIAPAZON_DB_DRIVER', \Diapazon\Database\DriverType::POSTGRESQL);
 
 /*
  * Put your own directories with classes you wanted to be autoloaded

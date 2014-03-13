@@ -8,6 +8,10 @@
 
 namespace Diapazon;
 
+use Diapazon\Database\Db;
+use Diapazon\Database\Driver;
+use Diapazon\Database\DriverType;
+use Diapazon\Database\PostgreSqlDriver;
 use Diapazon\Router\Route;
 use Diapazon\Router\Router;
 
@@ -61,13 +65,13 @@ class Diapazon
             switch (DIAPAZON_ENV)
             {
                 case self::ENV_TEST:
-                    $aDbParams = $DiapazonDatabases['test'];
+                    Db::createFromArray($DiapazonDatabases['test']);
                     break;
                 case self::ENV_PROD:
-                    $aDbParams = $DiapazonDatabases['prod'];
+                    Db::createFromArray($DiapazonDatabases['prod']);
                     break;
                 default:
-                    $aDbParams = $DiapazonDatabases['dev'];
+                    Db::createFromArray($DiapazonDatabases['dev']);
             }
             unset($DiapazonDatabases);
         }
@@ -113,6 +117,20 @@ class Diapazon
         $this->controller->before_filter($this->route->getParameters());
         $action = $this->action;
         $this->controller->$action($this->route->getParameters());
+    }
+
+    /**
+     * @throws \Exception
+     * @return Driver
+     */
+    public static function getDBDriver()
+    {
+        if (DIAPAZON_DB_DRIVER == DriverType::POSTGRESQL)
+            $driver = new PostgreSqlDriver();
+        else
+            throw new \Exception('Invalid database driver');
+
+        return $driver;
     }
 
     public static function run()
