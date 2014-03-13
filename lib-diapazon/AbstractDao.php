@@ -16,6 +16,20 @@ abstract class AbstractDao
     const WHERE_MODE_OR  = 2;
 
     /**
+     * Simulate first-class citizen for genericity
+     * @var AbstractEntity
+     */
+    private $class;
+
+    /**
+     * @param $class
+     */
+    public function __construct($class)
+    {
+        $this->class = $class;
+    }
+
+    /**
      * @param AbstractEntity $entity Object to hydrate
      * @param array          $data Associative array representing object value
      */
@@ -62,15 +76,161 @@ abstract class AbstractDao
      * @param array $order Array for ordering results
      * @return AbstractEntity[]
      */
-    public abstract function getAll($order = null);
+    public function getAll($order = null)
+    {
+        $class    = $this->class;
+        $getAllSP = $class::_getSPGetAll();
+
+        $pdo = PDOS::getInstance();
+
+        $order = self::handleOrder($order);
+
+        if (is_null($order))
+            $query = $pdo->prepare('SELECT * FROM ' . $getAllSP . '()');
+        else
+            $query = $pdo->prepare('SELECT * FROM ' . $getAllSP . '() ORDER BY ' . $order);
+        $query->execute();
+
+        $datas = $query->fetchAll();
+
+        $outputs = array();
+        foreach ($datas as $d)
+        {
+            $object = new $class();
+            self::hydrate($object, $d);
+            $outputs[] = $object;
+        }
+        return $outputs;
+    }
 
     /**
-     * @param array $where
      * @param array $order
-     * @param int   $mode
+     * @throws \Exception
+     * @return string|null
+     */
+    private function handleOrder($order)
+    {
+        $class = $this->class;
+        if (is_array($order))
+        {
+            $sReturningOrder = '';
+            foreach ($order as $sRow)
+            {
+                $aChunks = explode(' ', $sRow);
+                if (in_array($aChunks[0], $class::_getFields()))
+                {
+                    $sReturningOrder .= $aChunks[0];
+                    if (count($aChunks) > 1)
+                    {
+                        $direction = $aChunks[1];
+                        if (strtolower($direction) == 'asc' || strtolower($direction) == 'desc')
+                            $sReturningOrder .= ' ' . $direction;
+                    }
+                    $sReturningOrder .= ', ';
+                }
+                else
+                    throw new \Exception('Trying to order by a column that doesn\'t exist on ' . $class::_getTableName());
+            }
+
+            return substr($sReturningOrder, 0, -2);
+        }
+        else
+            return null;
+    }
+
+    /**
+     * @param       $where_clause
+     * @param array $order
+     * @param int   $where_mode
+     * @throws \Exception
      * @return mixed
      */
-    public abstract function where($where, $order = null, $mode = self::WHERE_MODE_AND);
+    public function where($where_clause, $order = null, $where_mode = self::WHERE_MODE_AND)
+    {
+        $class    = $this->class;
+        $SPGetAll = $class::_getSPGetAll();
+        $pdo      = PDOS::getInstance();
+
+        $sWhereClause = '';
+        if (is_array($where_clause))
+        {
+            $sSeparator = $where_mode == self::WHERE_MODE_OR ? 'OR' : 'AND';
+
+            //array(array(field, operator, value), array(field, operator, value))
+            foreach ($where_clause as $aCondition)
+            {
+                if (is_array($aCondition) && count($aCondition) == 3)
+                {
+                    $column   = $aCondition[0];
+                    $operator = $aCondition[1];
+                    $value    = $aCondition[2];
+
+                    if (in_array($column, $class::_getFields()))
+                    {
+                        $valid_operators = array('=', '>', '<', '>=', '<=', '<>', 'IS', 'IS NOT', 'LIKE');
+                        if (in_array($operator, $valid_operators))
+                        {
+                            if (is_bool($value))
+                                $value = $value ? 'true' : 'false';
+                            else if (is_string($value))
+                            {
+                                $value = pg_escape_string($value);
+                                $value = '\'' . $value . '\'';
+                            }
+                            else if (is_null($value))
+                                $value = 'NULL';
+
+                            $sWhereClause .= $column . ' ' . $operator . ' ' . $value . ' ' . $sSeparator . ' ';
+                        }
+                        else
+                            throw new \Exception('Operator ' . $operator . ' is not a valid operator. Authorized operators are : ' . implode(', ', $valid_operators));
+                    }
+                    else
+                        throw new \Exception($column . ' is not a column of table ' . $class::_getTableName());
+                }
+                else
+                    throw new \Exception('Conditions must be arrays of this kind array(column, operator, value)');
+            }
+
+            //Removing that last AND or OR
+            $sWhereClause = substr($sWhereClause, 0, -1 * (strlen($sSeparator) + 2));
+        }
+
+        $order = self::handleOrder($order);
+        if (!is_null($order))
+            $order = ' ORDER BY ' . $order;
+
+        $query = $pdo->prepare('SELECT * FROM ' . $SPGetAll . '() WHERE ' . $sWhereClause . $order);
+        $query->execute();
+
+        $datas = $query->fetchAll();
+
+        $outputs = array();
+        foreach ($datas as $d)
+        {
+            $object = new $class();
+            self::hydrate($object, $d);
+            $outputs[] = $object;
+        }
+        return $outputs;
+    }
+
+    /**
+     * @return int
+     */
+    public function count()
+    {
+        $class = $this->class;
+        $proc  = $class::_getSPCount();
+        $pdo   = PDOS::getInstance();
+
+        $query = $pdo->prepare('SELECT * FROM ' . $proc . '()');
+        $query->execute();
+
+        $result = $query->fetch();
+
+        return intval($result[$proc]);
+    }
 
     /**
      * @param int   $number
@@ -78,7 +238,30 @@ abstract class AbstractDao
      * @param array $order
      * @return mixed
      */
-    public abstract function take($number, $offset, $order = null);
+    public function take($number, $offset = 0, $order = null)
+    {
+        $class = $this->class;
+        $proc  = $class::_getSPTake();
+        $pdo   = PDOS::getInstance();
+
+        $order = self::handleOrder($order);
+
+        $query = $pdo->prepare('SELECT * FROM ' . $proc . '(:start, :number, :order)');
+        $query->bindValue(':start', $offset);
+        $query->bindValue(':number', $number);
+        $query->bindValue(':order', is_null($order) ? 'null' : $order);
+        $query->execute();
+
+        $datas   = $query->fetchAll();
+        $outputs = array();
+        foreach ($datas as $d)
+        {
+            $object = new $class();
+            self::hydrate($object, $d);
+            $outputs[] = $object;
+        }
+        return $outputs;
+    }
 
     /**
      * @param AbstractEntity $entity Entity to save
@@ -88,16 +271,16 @@ abstract class AbstractDao
         if ($entity->_getDFEdited())
         {
             if (!$entity->_getDFInserted())
-                self::insert($entity);
+                $this->insert($entity);
             else
-                self::update($entity);
+                $this->update($entity);
         }
     }
 
     /**
      * @param AbstractEntity $entity
      */
-    private static function insert(AbstractEntity &$entity)
+    private function insert(AbstractEntity &$entity)
     {
         $aAttributes = self::getAttributes($entity);
 
@@ -146,7 +329,7 @@ abstract class AbstractDao
         $entity->_setDFEdited(false);
     }
 
-    private static function update(AbstractEntity &$entity)
+    private function update(AbstractEntity &$entity)
     {
         $sql        = 'UPDATE ' . $entity::_getTableName() . ' SET ';
         $set        = '';

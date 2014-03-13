@@ -18,6 +18,12 @@ abstract class AbstractEntity
     protected static $_fields = array();
     /** @var array */
     protected static $_primaryKey = array();
+    /** @var string */
+    protected static $_SPGetAll;
+    /** @var string */
+    protected static $_SPCount;
+    /** @var string */
+    protected static $_SPTake;
 
     /** @var bool */
     protected $_DFEdited;
@@ -28,6 +34,30 @@ abstract class AbstractEntity
     {
         $this->_DFEdited   = false;
         $this->_DFInserted = false;
+    }
+
+    /**
+     * @return string
+     */
+    public static function _getSPGetAll()
+    {
+        return self::$_SPGetAll;
+    }
+
+    /**
+     * @return string
+     */
+    public static function _getSPCount()
+    {
+        return self::$_SPCount;
+    }
+
+    /**
+     * @return string
+     */
+    public static function _getSPTake()
+    {
+        return self::$_SPTake;
     }
 
     /**
