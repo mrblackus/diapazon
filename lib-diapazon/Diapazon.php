@@ -52,6 +52,7 @@ class Diapazon
         require_once('../vendor/autoload.php');
         require_once('Autoloader.php');
         require_once('config.php');
+        require_once('database/DriverType.php');
         require_once('../config/config.php');
         Autoloader::register();
 

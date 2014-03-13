@@ -16,4 +16,5 @@ Autoloader::addPath('app/service/');
 Autoloader::addPath('app/service/dao/');
 Autoloader::addPath('app/service/entity/');
 Autoloader::addPath('lib-diapazon/');
+Autoloader::addPath('lib-diapazon/database/');
 Autoloader::addPath('lib-diapazon/router/');
