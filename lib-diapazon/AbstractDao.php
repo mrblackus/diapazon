@@ -22,7 +22,7 @@ abstract class AbstractDao
     private $class;
 
     /**
-     * @param $class
+     * @param $class string Entity classname managed by DAO
      */
     public function __construct($class)
     {
