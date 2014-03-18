@@ -12,6 +12,8 @@ use Diapazon\Database\PDOS;
 
 abstract class AbstractDao
 {
+    use THydrator;
+
     const WHERE_MODE_AND = 1;
     const WHERE_MODE_OR  = 2;
 
@@ -20,28 +22,6 @@ abstract class AbstractDao
      * @var AbstractEntity Entity classname managed by DAO
      */
     protected static $class;
-
-    /**
-     * @param AbstractEntity $entity Object to hydrate
-     * @param array          $data Associative array representing object value
-     */
-    protected static function hydrate(AbstractEntity &$entity, Array $data)
-    {
-        $r = new \ReflectionClass($entity);
-        foreach ($data as $k => $v)
-        {
-            $methodName = "set" . Tools::capitalize($k);
-            if ($r->hasMethod($methodName))
-            {
-                $method = $r->getMethod($methodName);
-                $method->setAccessible(true);
-                $method->invoke($entity, $v);
-                $method->setAccessible(false);
-            }
-        }
-
-        $entity->_setDFEdited(false);
-    }
 
     /**
      * @param AbstractEntity $entity

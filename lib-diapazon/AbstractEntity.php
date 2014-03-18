@@ -8,7 +8,7 @@
 
 namespace Diapazon;
 
-abstract class AbstractEntity
+abstract class AbstractEntity implements IHydratable
 {
     /** @var string */
     protected static $_tableName;

@@ -193,7 +193,6 @@ class AbstractSchema
         $variables = array();
 
         $variables['className']  = $sp->getClassName();
-        $variables['modelClass'] = '\\Lib\\Models\\Model';
         $variables['name']       = $sp->getName();
         $variables['returnType'] = $sp->getCleanReturnType();
 
