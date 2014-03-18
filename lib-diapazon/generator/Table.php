@@ -41,14 +41,6 @@ class Table
     /**
      * @return string
      */
-    public function getT_ClassName()
-    {
-        return 'T_' . Tools::capitalize(Tools::removeSFromTableName($this->name));
-    }
-
-    /**
-     * @return string
-     */
     public function getClassName()
     {
         return Tools::capitalize(Tools::removeSFromTableName($this->name));

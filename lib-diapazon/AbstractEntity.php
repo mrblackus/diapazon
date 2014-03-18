@@ -41,7 +41,7 @@ abstract class AbstractEntity
      */
     public static function _getSPGetAll()
     {
-        return self::$_SPGetAll;
+        return static::$_SPGetAll;
     }
 
     /**
@@ -49,7 +49,7 @@ abstract class AbstractEntity
      */
     public static function _getSPCount()
     {
-        return self::$_SPCount;
+        return static::$_SPCount;
     }
 
     /**
@@ -57,7 +57,7 @@ abstract class AbstractEntity
      */
     public static function _getSPTake()
     {
-        return self::$_SPTake;
+        return static::$_SPTake;
     }
 
     /**
@@ -65,7 +65,7 @@ abstract class AbstractEntity
      */
     public static function _getTableName()
     {
-        return self::$_tableName;
+        return static::$_tableName;
     }
 
     /**
@@ -73,7 +73,7 @@ abstract class AbstractEntity
      */
     public static function _getFields()
     {
-        return self::$_fields;
+        return static::$_fields;
     }
 
     /**
@@ -81,7 +81,7 @@ abstract class AbstractEntity
      */
     public static function _getPrimaryKey()
     {
-        return self::$_primaryKey;
+        return static::$_primaryKey;
     }
 
     /**
@@ -89,7 +89,7 @@ abstract class AbstractEntity
      */
     public static function _getSequences()
     {
-        return self::$_sequences;
+        return static::$_sequences;
     }
 
     /**

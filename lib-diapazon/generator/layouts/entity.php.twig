@@ -1,0 +1,63 @@
+<?php
+class {{ className }} extends \Diapazon\AbstractEntity
+{
+  protected static $_tableName     = '{{ tableName }}';
+  protected static $_primaryKey    = array({{ primaryKey }});
+  protected static $_fields        = array({{ field_list }});
+  protected static $_sequences     = array({{ sequencesArray }});
+  protected static $_SPGetAll      = '{{ SPGetAll }}';
+  protected static $_SPCount       = '{{ SPCount }}';
+  protected static $_SPTake        = '{{ SPTake }}';
+
+{% for f in fields %}
+  protected $_{{ f.getName }} = {{ f.defaultValueToString }};
+
+  public function get{{ f.getCapName }}()
+  {
+    return $this->_{{ f.getName }};
+  }
+
+  public function set{{ f.getCapName }}(${{ f.getName }})
+  {
+    $this->_setDFEdited(true);
+    $this->_{{ f.getName }} = ${{ f.getName }};
+  }
+
+{% endfor %}
+
+{% for mto in manyToOne %}
+  protected $_{{ mto.getField }} = null;
+
+  public function get{{ mto.getField | capitalize }}()
+  {
+    return $this->_{{ mto.getField }};
+  }
+
+  public function set{{ mto.getField | capitalize }}(${{ mto.getField }})
+  {
+    $this->_setDFEdited(true);
+    $this->_{{ mto.getField }} = ${{ mto.getField }};
+  }
+
+{% set className = mto.getTargetTable | capitalize | removeS %}
+{% set attrName = mto.getCleanField %}
+  /** @var {{ className }} */
+  protected ${{ attrName }} = null;
+
+  /** @return {{ className }} */
+  public function get{{ attrName | capitalize }}()
+  {
+    if (is_null($this->{{ attrName }}))
+      $this->{{ attrName }} = {{ className }}Dao::find($this->_{{ mto.getField }});
+     return $this->{{ attrName }};
+  }
+
+  /** @param {{ className }} ${{ attrName }} */
+  public function set{{ attrName | capitalize }}(${{ attrName }})
+  {
+    $this->{{ attrName }} = ${{ attrName }};
+    $this->_{{ mto.getField }} = ${{ attrName}}->get{{ mto.getTargetField | capitalize }}();
+    $this->_setDFEdited(true);
+  }
+{% endfor %}
+}

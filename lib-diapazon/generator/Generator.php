@@ -9,6 +9,7 @@
 
 namespace Diapazon\Generator;
 
+use Diapazon\Autoloader;
 use Diapazon\Database\Db;
 use Diapazon\Diapazon;
 use Diapazon\Database\PDOS;
@@ -23,9 +24,8 @@ class Generator
 
     private static function init()
     {
-        require_once(__DIR__ . '/../autoloader.php');
-        require_once(__DIR__ . '/../config.php');
-        require_once(__DIR__ . '/../../config/config.php');
+        require_once(__DIR__ . '/../Diapazon.php');
+        Diapazon::init();
     }
 
     private static function emptyDirectory($dirName)
@@ -53,9 +53,10 @@ class Generator
 
     public static function run()
     {
+        self::init();
+
         $db = Db::getInstance();
 
-        self::init();
         self::writeLine("Diapazon Framework v" . DIAPAZON_VERSION);
         self::writeLine("Emptying entity directory");
         self::emptyDirectory(__DIR__ . self::RELATIVE_DAO_SAVE_DIR);

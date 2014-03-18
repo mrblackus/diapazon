@@ -1,0 +1,65 @@
+<?php
+class {{ className }} extends \Diapazon\AbstractDao
+{
+  protected static $class = '{{ finalClassName }}';
+
+  /**
+  {{ find_params }}
+   * @return {{ finalClassName }}
+   */
+  public static function find({{ find_proto }})
+  {
+    $pdo = \Diapazon\Database\PDOS::getInstance();
+    $query = $pdo->prepare('SELECT * FROM {{ findProcedureName }}({{ find_placeholder }})');
+
+    //Parameters binding
+    $driver = \Diapazon\Diapazon::getDBDriver();
+{% for f in pkFields %}
+    $driver::bindPDOValue($query, ':{{ f.getName }}', ${{ f.getName }});
+{% endfor %}
+
+    $query->execute();
+    {{ find_result }} = $query->fetch();
+
+    if (!is_null({{ find_result }}) && {{ find_checkNull }})
+    {
+      $output_object = new {{ finalClassName }}();
+      self::hydrate($output_object, {{ find_result }});
+      return $output_object;
+    }
+    else
+      return null;
+  }
+
+{% for otm in oneToMany %}
+{% set className = otm.getTargetTable | capitalize | removeS %}
+{% set attribute = otm.getTargetTable ~ 'From' ~ (otm.getCleanField | capitalize) %}
+  /** @var {{ className }}[] */
+  protected ${{ attribute }} = null;
+
+  /**
+   * @param {{ finalClassName }} $entity
+   * @param string $order
+   * @return {{ className }}[]
+   */
+  public static function get{{ attribute | capitalize }}($entity, $order = null)
+  {
+      $pdo = \Diapazon\Database\PDOS::getInstance();
+      if (!is_null($order))
+        $query = $pdo->prepare('SELECT * FROM {{ otm.getProcedureName }}(' . $entity->get{{ otm.getField | capitalize }}() . ') ORDER BY ' . $order);
+      else
+        $query = $pdo->prepare('SELECT * FROM {{ otm.getProcedureName }}(' . $entity->get{{ otm.getField | capitalize }}() . ')');
+      $query->execute();
+
+      $results  = $query->fetchAll();
+      $objs     = array();
+      foreach ($results as $r)
+      {
+        $obj = new {{ className }}();
+        self::hydrate($obj, $r);
+        $objs[] = $obj;
+      }
+      return $objs;
+  }
+{% endfor %}
+}

@@ -72,15 +72,15 @@ class AbstractSchema
 
         $loader     = new \Twig_Loader_Filesystem(__DIR__ . '/layouts');
         $this->twig = new \Twig_Environment($loader, $twig_options);
-        $this->twig->addFilter("removeS", new \Twig_Filter_Function("\\Lib\\Tools::removeSFromTableName"));
+        $this->twig->addFilter("removeS", new \Twig_Filter_Function("\\Diapazon\\Tools::removeSFromTableName"));
     }
 
     public function writeFiles()
     {
         $this->init();
 
-        $this->writeT_Models();
-        $this->writeModels();
+        $this->writeEntities();
+        $this->writeDaos();
         $this->writeSPModels();
     }
 
@@ -97,30 +97,95 @@ class AbstractSchema
         }
     }
 
-    private function writeModels()
+    private function writeDaos()
     {
-        $save_dir = __DIR__ . Generator::RELATIVE_MODEL_SAVE_DIR;
+        $save_dir = __DIR__ . Generator::RELATIVE_DAO_SAVE_DIR;
         foreach ($this->tables as $table)
         {
-            $fileName = '' . Tools::removeSFromTableName($table->getName()) . '.php';
+            $fileName = Tools::removeSFromTableName($table->getName()) . 'Dao.php';
 
             $file = fopen($save_dir . $fileName, "w");
-            fwrite($file, $this->ModelToString($table));
+            fwrite($file, $this->DaoToString($table));
             fclose($file);
         }
     }
 
-    private function writeT_Models()
+//    private function writeModels()
+//    {
+//        $save_dir = __DIR__ . Generator::RELATIVE_MODEL_SAVE_DIR;
+//        foreach ($this->tables as $table)
+//        {
+//            $fileName = '' . Tools::removeSFromTableName($table->getName()) . '.php';
+//
+//            $file = fopen($save_dir . $fileName, "w");
+//            fwrite($file, $this->ModelToString($table));
+//            fclose($file);
+//        }
+//    }
+
+    private function writeEntities()
     {
-        $save_dir = __DIR__ . Generator::RELATIVE_T_MODEL_SAVE_DIR;
+        $save_dir = __DIR__ . Generator::RELATIVE_ENTITY_SAVE_DIR;
         foreach ($this->tables as $table)
         {
-            $fileName = 't_' . Tools::removeSFromTableName($table->getName()) . '.php';
+            $fileName = Tools::removeSFromTableName($table->getName()) . '.php';
 
             $file = fopen($save_dir . $fileName, "w");
-            fwrite($file, $this->T_ModelToString($table));
+            fwrite($file, $this->EntityToString($table));
             fclose($file);
         }
+    }
+
+    private function DaoToString(Table $table)
+    {
+        $variables['className']    = $table->getClassName() . 'Dao';
+
+        //Find
+        $find_params      = '';
+        $find_proto       = '';
+        $find_placeholder = '';
+        $find_checkNull   = '';
+        $find_result      = '$result';
+
+        foreach ($table->getPrimaryKey()->getFields() as $f)
+        {
+            $find_params .= " * @param \$" . $f->getName() . "\n";
+            $find_proto .= "\$" . $f->getName() . ", ";
+            $find_placeholder .= ":" . $f->getName() . ", ";
+            $find_checkNull .= '!is_null(' . $find_result . '[\'' . $f->getName() . '\']) && ';
+        }
+
+        $variables['finalClassName']    = $table->getClassName();
+        $variables['find_params']       = substr($find_params, 0, -1);
+        $variables['find_proto']        = substr($find_proto, 0, -2);
+        $variables['find_placeholder']  = substr($find_placeholder, 0, -2);
+        $variables['find_checkNull']    = substr($find_checkNull, 0, -4);
+        $variables['find_result']       = $find_result;
+        $variables['pkFields']          = $table->getPrimaryKey()->getFields();
+        $variables['findProcedureName'] = $this->driver->writeFindProcedure($table);
+
+        //OneToMany
+        $otm = $table->getOneToManyJoins();
+        if (!is_null($otm))
+        {
+            foreach ($table->getOneToManyJoins() as $o)
+            {
+                $cleanName = $o->getTargetField();
+                if (substr($cleanName, strlen($cleanName) - 3) == '_id')
+                    $cleanName = substr($cleanName, 0, -3);
+                else if (substr($cleanName, strlen($cleanName) - 2) == 'Id')
+                    $cleanName = substr($cleanName, 0, -2);
+                $cleanName = strtolower($cleanName);
+
+                $o->setCleanField($cleanName);
+                $procedureName = $this->driver->writeOneToManyProcedure($o->getTargetTable(), $o->getTargetField(), $cleanName,
+                    $table->getName(), $table->getField($o->getField())->getType());
+                $o->setProcedureName($procedureName);
+            }
+        }
+        $variables['oneToMany'] = is_null($otm) ? array() : $table->getOneToManyJoins();
+
+        return $this->twig->render('dao.php.twig', $variables);
     }
 
     private function SP_ModelToString(StoredProcedure $sp)
@@ -167,21 +232,20 @@ class AbstractSchema
         return $this->twig->render('sp_model.php.twig', $variables);
     }
 
-    private function ModelToString(Table $table)
-    {
-        $variables              = array();
-        $variables['className'] = $table->getClassName();
+//    private function ModelToString(Table $table)
+//    {
+//        $variables              = array();
+//        $variables['className'] = $table->getClassName();
+//
+//        return $this->twig->render('model.php.twig', $variables);
+//    }
 
-        return $this->twig->render('model.php.twig', $variables);
-    }
-
-    private function T_ModelToString(Table $table)
+    private function EntityToString(Table $table)
     {
         $variables = array();
 
-        $variables['tClassName']     = $table->getT_ClassName();
-        $variables['finalClassName'] = $table->getClassName();
-        $variables['tableName']      = $table->getName();
+        $variables['className'] = $table->getClassName();
+        $variables['tableName'] = $table->getName();
 
         $str = '';
         foreach ($table->getPrimaryKey()->getFields() as $field)
@@ -196,48 +260,10 @@ class AbstractSchema
         $variables['fields']    = $this->removeJoinsFields($table->getFields(), $table->getManyToOneJoins());
         $variables['manyToOne'] = $table->getManyToOneJoins();
 
-        $otm = $table->getOneToManyJoins();
-        if (!is_null($otm))
-        {
-            foreach ($table->getOneToManyJoins() as $o)
-            {
-                $cleanName = $o->getTargetField();
-                if (substr($cleanName, strlen($cleanName) - 3) == '_id')
-                    $cleanName = substr($cleanName, 0, -3);
-                else if (substr($cleanName, strlen($cleanName) - 2) == 'Id')
-                    $cleanName = substr($cleanName, 0, -2);
-                $cleanName = strtolower($cleanName);
-
-                $o->setCleanField($cleanName);
-                $procedureName = $this->driver->writeOneToManyProcedure($o->getTargetTable(), $o->getTargetField(), $cleanName,
-                    $table->getName(), $table->getField($o->getField())->getType());
-                $o->setProcedureName($procedureName);
-            }
-        }
-        $variables['oneToMany'] = is_null($otm) ? array() : $table->getOneToManyJoins();
-
-        //Find
-        $find_params      = '';
-        $find_proto       = '';
-        $find_placeholder = '';
-        $find_checkNull   = '';
-        $find_result      = '$result';
-
-        foreach ($table->getPrimaryKey()->getFields() as $f)
-        {
-            $find_params .= " * @param \$" . $f->getName() . "\n";
-            $find_proto .= "\$" . $f->getName() . ", ";
-            $find_placeholder .= ":" . $f->getName() . ", ";
-            $find_checkNull .= '!is_null(' . $find_result . '[\'' . $f->getName() . '\']) && ';
-        }
-
-        $variables['find_params']       = substr($find_params, 0, -1);
-        $variables['find_proto']        = substr($find_proto, 0, -2);
-        $variables['find_placeholder']  = substr($find_placeholder, 0, -2);
-        $variables['find_checkNull']    = substr($find_checkNull, 0, -4);
-        $variables['find_result']       = $find_result;
-        $variables['pkFields']          = $table->getPrimaryKey()->getFields();
-        $variables['findProcedureName'] = $this->driver->writeFindProcedure($table);
+        $variables['SPGetAll']  = $this->driver->writeAllProcedure($table);
+        $variables['SPTake']    = $this->driver->writeTakeProcedure($table);
+        $variables['SPCount']   = $this->driver->writeCountProcedure($table);
+        $variables['pkFields']  = $table->getPrimaryKey()->getFields();
 
         $str = '';
         foreach ($table->getFields() as $field)
@@ -247,7 +273,7 @@ class AbstractSchema
         }
         $variables['sequencesArray'] = substr($str, 0, -2);
 
-        return $this->twig->render('t_model.php.twig', $variables);
+        return $this->twig->render('entity.php.twig', $variables);
     }
 
     /**

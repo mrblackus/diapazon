@@ -35,7 +35,7 @@ class Log
 
         if (DIAPAZON_ENV == Diapazon::ENV_DEV)
             $this->log->pushHandler(new ChromePHPHandler());
-        ErrorHandler::register($this->log);
+        //ErrorHandler::register($this->log);
     }
 
     private static function getInstance()

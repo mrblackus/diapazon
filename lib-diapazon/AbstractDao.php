@@ -17,17 +17,9 @@ abstract class AbstractDao
 
     /**
      * Simulate first-class citizen for genericity
-     * @var AbstractEntity
+     * @var AbstractEntity Entity classname managed by DAO
      */
-    private $class;
-
-    /**
-     * @param $class string Entity classname managed by DAO
-     */
-    public function __construct($class)
-    {
-        $this->class = $class;
-    }
+    protected static $class;
 
     /**
      * @param AbstractEntity $entity Object to hydrate
@@ -47,6 +39,8 @@ abstract class AbstractDao
                 $method->setAccessible(false);
             }
         }
+
+        $entity->_setDFEdited(false);
     }
 
     /**
@@ -76,9 +70,9 @@ abstract class AbstractDao
      * @param array $order Array for ordering results
      * @return AbstractEntity[]
      */
-    public function getAll($order = null)
+    public static function getAll($order = null)
     {
-        $class    = $this->class;
+        $class    = static::$class;
         $getAllSP = $class::_getSPGetAll();
 
         $pdo = PDOS::getInstance();
@@ -96,8 +90,10 @@ abstract class AbstractDao
         $outputs = array();
         foreach ($datas as $d)
         {
+            /** @var $object AbstractEntity */
             $object = new $class();
             self::hydrate($object, $d);
+            $object->_setDFInserted(true);
             $outputs[] = $object;
         }
         return $outputs;
@@ -108,9 +104,9 @@ abstract class AbstractDao
      * @throws \Exception
      * @return string|null
      */
-    private function handleOrder($order)
+    private static function handleOrder($order)
     {
-        $class = $this->class;
+        $class = static::$class;
         if (is_array($order))
         {
             $sReturningOrder = '';
@@ -145,9 +141,9 @@ abstract class AbstractDao
      * @throws \Exception
      * @return mixed
      */
-    public function where($where_clause, $order = null, $where_mode = self::WHERE_MODE_AND)
+    public static function where($where_clause, $order = null, $where_mode = self::WHERE_MODE_AND)
     {
-        $class    = $this->class;
+        $class    = static::$class;
         $SPGetAll = $class::_getSPGetAll();
         $pdo      = PDOS::getInstance();
 
@@ -208,8 +204,10 @@ abstract class AbstractDao
         $outputs = array();
         foreach ($datas as $d)
         {
+            /** @var $object AbstractEntity */
             $object = new $class();
             self::hydrate($object, $d);
+            $object->_setDFInserted(true);
             $outputs[] = $object;
         }
         return $outputs;
@@ -218,9 +216,9 @@ abstract class AbstractDao
     /**
      * @return int
      */
-    public function count()
+    public static function count()
     {
-        $class = $this->class;
+        $class = static::$class;
         $proc  = $class::_getSPCount();
         $pdo   = PDOS::getInstance();
 
@@ -238,9 +236,9 @@ abstract class AbstractDao
      * @param array $order
      * @return mixed
      */
-    public function take($number, $offset = 0, $order = null)
+    public static function take($number, $offset = 0, $order = null)
     {
-        $class = $this->class;
+        $class = static::$class;
         $proc  = $class::_getSPTake();
         $pdo   = PDOS::getInstance();
 
@@ -256,8 +254,10 @@ abstract class AbstractDao
         $outputs = array();
         foreach ($datas as $d)
         {
+            /** @var $object AbstractEntity */
             $object = new $class();
             self::hydrate($object, $d);
+            $object->_setDFInserted(true);
             $outputs[] = $object;
         }
         return $outputs;
@@ -266,21 +266,21 @@ abstract class AbstractDao
     /**
      * @param AbstractEntity $entity Entity to save
      */
-    public function save(AbstractEntity &$entity)
+    public static function save(AbstractEntity &$entity)
     {
         if ($entity->_getDFEdited())
         {
             if (!$entity->_getDFInserted())
-                $this->insert($entity);
+                self::insert($entity);
             else
-                $this->update($entity);
+                self::update($entity);
         }
     }
 
     /**
      * @param AbstractEntity $entity
      */
-    private function insert(AbstractEntity &$entity)
+    private static function insert(AbstractEntity &$entity)
     {
         $aAttributes = self::getAttributes($entity);
 
@@ -329,7 +329,7 @@ abstract class AbstractDao
         $entity->_setDFEdited(false);
     }
 
-    private function update(AbstractEntity &$entity)
+    private static function update(AbstractEntity &$entity)
     {
         $sql        = 'UPDATE ' . $entity::_getTableName() . ' SET ';
         $set        = '';
@@ -355,12 +355,13 @@ abstract class AbstractDao
             $driver->bindPDOValue($query, ':' . $k, $v);
         }
         $query->execute();
+        $entity->_setDFEdited(false);
     }
 
     /**
      * @param AbstractEntity $entity Entity to delete
      */
-    public function delete(AbstractEntity $entity)
+    public static function delete(AbstractEntity &$entity)
     {
         $table       = $entity->_getTableName();
         $pdo         = PDOS::getInstance();
@@ -372,7 +373,7 @@ abstract class AbstractDao
         $whereClause = substr($whereClause, 0, -4);
         $sql         = 'DELETE FROM ' . $table . ' WHERE ' . $whereClause;
         $query       = $pdo->prepare($sql);
-        $attributes  = $this->getAttributes($entity);
+        $attributes  = self::getAttributes($entity);
 
         foreach ($attributes as $k => $v)
         {
@@ -380,21 +381,22 @@ abstract class AbstractDao
                 $query->bindValue(':' . $k, $v);
         }
         $query->execute();
+        $entity = null;
     }
 
     /**
      * @param AbstractEntity[] $objects
      */
-    public function insertAll(Array $objects)
+    public static function insertAll(Array $objects)
     {
         if (count($objects) == 0)
             return;
 
-        $class        = $this->class;
-        $table        = $class::_getTableName();
-        $attributes   = self::getAttributes($objects[0]);
-        $nbColumns    = count($attributes);
-        $nbTotalRows  = count($objects);
+        $class       = static::$class;
+        $table       = $class::_getTableName();
+        $attributes  = self::getAttributes($objects[0]);
+        $nbColumns   = count($attributes);
+        $nbTotalRows = count($objects);
 
         /* Building attribute => getter list */
         $attrGetter = array();

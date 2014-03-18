@@ -47,17 +47,17 @@ class Diapazon
     /**
      * @throws DiapazonException
      */
-    private static function init()
+    public static function init()
     {
-        require_once('../vendor/autoload.php');
-        require_once('Autoloader.php');
-        require_once('config.php');
-        require_once('database/DriverType.php');
-        require_once('../config/config.php');
+        require_once(__DIR__ . '/../vendor/autoload.php');
+        require_once(__DIR__ . '/Autoloader.php');
+        require_once(__DIR__ . '/config.php');
+        require_once(__DIR__ . '/database/DriverType.php');
+        require_once(__DIR__ . '/../config/config.php');
         Autoloader::register();
 
-        require_once('../app/routes.php');
-        require_once('../config/database.php');
+        require_once(__DIR__ . '/../app/routes.php');
+        require_once(__DIR__ . '/../config/database.php');
         if (isset($DiapazonDatabases) && is_array($DiapazonDatabases) &&
             array_key_exists('test', $DiapazonDatabases) && array_key_exists('dev', $DiapazonDatabases) &&
             array_key_exists('prod', $DiapazonDatabases)
