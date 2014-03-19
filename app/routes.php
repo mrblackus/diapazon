@@ -9,3 +9,4 @@
 $router = new \Diapazon\Router\Router();
 
 $router->add(array("url" => "/", "controller" => "index", "action" => "index"));
+$router->add(array("url" => "/toto", "controller" => "index", "action" => "index"));
