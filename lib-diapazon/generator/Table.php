@@ -46,6 +46,16 @@ class Table
         return Tools::capitalize(Tools::removeSFromTableName($this->name));
     }
 
+    public function getDaoName()
+    {
+        return $this->getClassName() . 'Dao';
+    }
+
+    public function getServiceName()
+    {
+        return $this->getClassName() . 'Service';
+    }
+
     /**
      * @param ManyToOne $mto
      */

@@ -115,11 +115,11 @@ abstract class AbstractDao
     }
 
     /**
-     * @param       $where_clause
+     * @param array $where_clause
      * @param array $order
      * @param int   $where_mode
      * @throws \Exception
-     * @return mixed
+     * @return AbstractEntity[]
      */
     public static function where($where_clause, $order = null, $where_mode = self::WHERE_MODE_AND)
     {
@@ -214,7 +214,7 @@ abstract class AbstractDao
      * @param int   $number
      * @param int   $offset
      * @param array $order
-     * @return mixed
+     * @return AbstractEntity[]
      */
     public static function take($number, $offset = 0, $order = null)
     {

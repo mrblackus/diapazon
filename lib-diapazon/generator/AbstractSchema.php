@@ -81,6 +81,7 @@ class AbstractSchema
 
         $this->writeEntities();
         $this->writeDaos();
+        $this->writeServices();
         $this->writeSPModels();
     }
 
@@ -94,6 +95,23 @@ class AbstractSchema
             $file = fopen($save_dir . $fileName, "w");
             fwrite($file, $this->SP_ModelToString($sp));
             fclose($file);
+        }
+    }
+
+    private function writeServices()
+    {
+        $save_dir = __DIR__ . Generator::RELATIVE_SERVICE_SAVE_DIR;
+        foreach ($this->tables as $table)
+        {
+            $fileName = Tools::removeSFromTableName($table->getName()) . 'Service.php';
+
+            //Services are generated just one time
+            if (!file_exists($save_dir . $fileName))
+            {
+                $file = fopen($save_dir . $fileName, "w");
+                fwrite($file, $this->serviceToString($table));
+                fclose($file);
+            }
         }
     }
 
@@ -136,9 +154,34 @@ class AbstractSchema
         }
     }
 
+    private function serviceToString(Table $table)
+    {
+        $variables = array();
+
+        $variables['className'] = $table->getServiceName();
+        $variables['daoName'] = $table->getDaoName();
+
+        //Find
+        $find_params      = '';
+        $find_proto       = '';
+
+        foreach ($table->getPrimaryKey()->getFields() as $f)
+        {
+            $find_params .= " * @param \$" . $f->getName() . "\n";
+            $find_proto .= "\$" . $f->getName() . ", ";
+        }
+
+        $variables['finalClassName']    = $table->getClassName();
+        $variables['find_params']       = substr($find_params, 0, -1);
+        $variables['find_proto']        = substr($find_proto, 0, -2);
+
+        return $this->twig->render('service.php.twig', $variables);
+    }
+
     private function DaoToString(Table $table)
     {
-        $variables['className']    = $table->getClassName() . 'Dao';
+        $variables = array();
+        $variables['className'] = $table->getDaoName();
 
         //Find
         $find_params      = '';
@@ -259,10 +302,10 @@ class AbstractSchema
         $variables['fields']    = $this->removeJoinsFields($table->getFields(), $table->getManyToOneJoins());
         $variables['manyToOne'] = $table->getManyToOneJoins();
 
-        $variables['SPGetAll']  = $this->driver->writeAllProcedure($table);
-        $variables['SPTake']    = $this->driver->writeTakeProcedure($table);
-        $variables['SPCount']   = $this->driver->writeCountProcedure($table);
-        $variables['pkFields']  = $table->getPrimaryKey()->getFields();
+        $variables['SPGetAll'] = $this->driver->writeAllProcedure($table);
+        $variables['SPTake']   = $this->driver->writeTakeProcedure($table);
+        $variables['SPCount']  = $this->driver->writeCountProcedure($table);
+        $variables['pkFields'] = $table->getPrimaryKey()->getFields();
 
         $str = '';
         foreach ($table->getFields() as $field)

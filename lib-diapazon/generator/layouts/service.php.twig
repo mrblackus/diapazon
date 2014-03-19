@@ -1,0 +1,18 @@
+<?php
+class {{ className }} extends \Diapazon\AbstractService
+{
+    /**
+     * @var {{ daoName }}
+     */
+    protected static $dao = '{{ daoName }}';
+
+    /**
+    {{ find_params }}
+    * @return {{ finalClassName }}
+    */
+    public static function find({{ find_proto }})
+    {
+        $dao = static::$dao;
+        return $dao::find({{ find_proto }});
+    }
+}
