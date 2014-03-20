@@ -9,20 +9,22 @@ requirejs.config({
     }
 });
 
-define(function (require) {
-    var system = require('durandal/system'),
-        app = require('durandal/app');
-
+define(['durandal/system', 'durandal/app', 'durandal/viewLocator'], function (system, app, viewLocator) {
     system.debug(true);
 
-    app.title = 'Durandal Starter Kit';
+    app.title = 'Smart Building Solution';
+    app.appName = 'schneider'   ;
+
 
     app.configurePlugins({
-        router:true,
-        dialog: true
+        router: true,
+        dialog: true,
+        widget: true
     });
 
-    app.start().then(function() {
-        app.setRoot('shell');
+    app.start().then(function () {
+        viewLocator.useConvention();
+
+        app.setRoot('viewmodels/shell', 'entrance');
     });
 });
