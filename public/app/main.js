@@ -12,8 +12,8 @@ requirejs.config({
 define(['durandal/system', 'durandal/app', 'durandal/viewLocator'], function (system, app, viewLocator) {
     system.debug(true);
 
-    app.title = 'Smart Building Solution';
-    app.appName = 'schneider'   ;
+    app.title = 'test diapazon';
+    app.appName = 'diapazon'   ;
 
 
     app.configurePlugins({
