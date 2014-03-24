@@ -79,10 +79,24 @@ class AbstractSchema
     {
         $this->init();
 
+        $this->writeTEntities();
         $this->writeEntities();
         $this->writeDaos();
         $this->writeServices();
         $this->writeSPModels();
+    }
+
+    public function writeTEntities()
+    {
+        $save_dir = __DIR__ . Generator::RELATIVE_T_ENTITY_SAVE_DIR;
+        foreach ($this->tables as $table)
+        {
+            $fileName = $table->getTEntityName() . '.php';
+
+            $file = fopen($save_dir . $fileName, "w");
+            fwrite($file, $this->T_EntityToString($table));
+            fclose($file);
+        }
     }
 
     private function writeSPModels()
@@ -152,6 +166,16 @@ class AbstractSchema
             fwrite($file, $this->EntityToString($table));
             fclose($file);
         }
+    }
+
+    private function EntityToString(Table $table)
+    {
+        $variables = array();
+
+        $variables['className'] = $table->getClassName();
+        $variables['t_entity'] = $table->getTEntityName();
+
+        return $this->twig->render('entity.php.twig', $variables);
     }
 
     private function serviceToString(Table $table)
@@ -282,11 +306,11 @@ class AbstractSchema
 //        return $this->twig->render('model.php.twig', $variables);
 //    }
 
-    private function EntityToString(Table $table)
+    private function T_EntityToString(Table $table)
     {
         $variables = array();
 
-        $variables['className'] = $table->getClassName();
+        $variables['className'] = $table->getTEntityName();
         $variables['tableName'] = $table->getName();
 
         $str = '';
@@ -315,7 +339,7 @@ class AbstractSchema
         }
         $variables['sequencesArray'] = substr($str, 0, -2);
 
-        return $this->twig->render('entity.php.twig', $variables);
+        return $this->twig->render('t_entity.php.twig', $variables);
     }
 
     /**

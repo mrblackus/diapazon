@@ -18,6 +18,7 @@ class Generator
 {
     const RELATIVE_DAO_SAVE_DIR      = '/../../app/service/dao/';
     const RELATIVE_ENTITY_SAVE_DIR   = '/../../app/service/entity/';
+    const RELATIVE_T_ENTITY_SAVE_DIR   = '/../../app/service/t_entity/';
     const RELATIVE_SP_MODEL_SAVE_DIR = '/../../app/sp_model/';
     const RELATIVE_SERVICE_SAVE_DIR  = '/../../app/service/';
     const W_CHMOD                    = 640;
@@ -58,8 +59,8 @@ class Generator
         $db = Db::getInstance();
 
         self::writeLine("Diapazon Framework v" . DIAPAZON_VERSION);
-        self::writeLine("Emptying entity directory");
-        self::emptyDirectory(__DIR__ . self::RELATIVE_DAO_SAVE_DIR);
+        self::writeLine("Emptying t_entity directory");
+        self::emptyDirectory(__DIR__ . self::RELATIVE_T_ENTITY_SAVE_DIR);
         self::writeLine("Emptying sp_model directory");
         self::emptyDirectory(__DIR__ . self::RELATIVE_SP_MODEL_SAVE_DIR);
 

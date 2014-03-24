@@ -46,6 +46,11 @@ class Table
         return Tools::capitalize(Tools::removeSFromTableName($this->name));
     }
 
+    public function getTEntityName()
+    {
+        return 'T_' . $this->getClassName();
+    }
+
     public function getDaoName()
     {
         return $this->getClassName() . 'Dao';
