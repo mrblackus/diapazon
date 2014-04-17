@@ -107,10 +107,10 @@ class Diapazon
             if (method_exists($this->controller, $this->route->getActionName()))
                 $this->action = $this->route->getActionName();
             else
-                throw new DiapazonException('Undefined action', 'Action ' . $this->route->getActionName() . ' doesn\'t exist on ' . $this->route->getControllerName() . ' controller.');
+                throw new DiapazonException('Action ' . $this->route->getActionName() . ' doesn\'t exist on ' . $this->route->getControllerName() . ' controller.');
         }
         else
-            throw new DiapazonException('Undefined controller', $this->route->getControllerName() . ' doesn\'t exist.');
+            throw new DiapazonException('Controller ' . $this->route->getControllerName() . ' doesn\'t exist.');
     }
 
     private function execute()

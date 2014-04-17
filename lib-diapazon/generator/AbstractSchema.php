@@ -117,7 +117,7 @@ class AbstractSchema
         $save_dir = __DIR__ . Generator::RELATIVE_SERVICE_SAVE_DIR;
         foreach ($this->tables as $table)
         {
-            $fileName = Tools::removeSFromTableName($table->getName()) . 'Service.php';
+            $fileName = Tools::capitalize(Tools::removeSFromTableName($table->getName())) . 'Service.php';
 
             //Services are generated just one time
             if (!file_exists($save_dir . $fileName))
@@ -134,7 +134,7 @@ class AbstractSchema
         $save_dir = __DIR__ . Generator::RELATIVE_DAO_SAVE_DIR;
         foreach ($this->tables as $table)
         {
-            $fileName = Tools::removeSFromTableName($table->getName()) . 'Dao.php';
+            $fileName = Tools::capitalize(Tools::removeSFromTableName($table->getName())) . 'Dao.php';
 
             $file = fopen($save_dir . $fileName, "w");
             fwrite($file, $this->DaoToString($table));
@@ -160,11 +160,14 @@ class AbstractSchema
         $save_dir = __DIR__ . Generator::RELATIVE_ENTITY_SAVE_DIR;
         foreach ($this->tables as $table)
         {
-            $fileName = Tools::removeSFromTableName($table->getName()) . '.php';
+            $fileName = Tools::capitalize(Tools::removeSFromTableName($table->getName())) . '.php';
 
-            $file = fopen($save_dir . $fileName, "w");
-            fwrite($file, $this->EntityToString($table));
-            fclose($file);
+            if (!file_exists($save_dir . $fileName))
+            {
+                $file = fopen($save_dir . $fileName, "w");
+                fwrite($file, $this->EntityToString($table));
+                fclose($file);
+            }
         }
     }
 

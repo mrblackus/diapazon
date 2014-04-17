@@ -51,8 +51,10 @@ class Field
 
     private function convertDefaultValueToString($str)
     {
-        if (is_null($str))
+        if (is_null($str) || $str == 'null')
             return 'null';
+        else if ($str == 'false' | $str == 'true')
+            return $str;
         else if (is_string($str) && ($this->type != 'integer' && $this->type != 'real'))
         {
             return "'" . $str . "'";

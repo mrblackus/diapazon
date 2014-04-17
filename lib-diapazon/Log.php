@@ -95,4 +95,15 @@ class Log
     {
         self::log(Logger::CRITICAL, $str);
     }
+
+    /**
+     * @param mixed $source
+     * @return string
+     */
+    public static function dumpInVar($source)
+    {
+        ob_start();
+        var_export($source);
+        return ob_get_clean();
+    }
 } 

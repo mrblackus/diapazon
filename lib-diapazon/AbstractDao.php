@@ -347,7 +347,7 @@ abstract class AbstractDao
         $pdo         = PDOS::getInstance();
         $whereClause = '';
 
-        foreach ($entity::$primary_keys as $pk)
+        foreach ($entity::_getPrimaryKey() as $pk)
             $whereClause .= $pk . ' = :' . $pk . ' AND ';
 
         $whereClause = substr($whereClause, 0, -4);
